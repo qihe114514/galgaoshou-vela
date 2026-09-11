@@ -1,0 +1,57 @@
+{
+  "package": "cn.galgaoshou.qihe",
+  "name": "难道你是gal高手！？",
+  "versionName": "1.3",
+  "versionCode": 2,
+  "minPlatformVersion": 1100,
+  "simulationVersion": "default",
+  "icon": "/common/icon.png",
+  "deviceTypeList": [
+    "watch"
+  ],
+  "features": [
+    {
+      "name": "system.router"
+    },
+    {
+      "name": "system.storage"
+    },
+    {
+      "name": "system.file"
+    },
+    {
+      "name": "system.prompt"
+    }
+  ],
+  "config": {
+    "logLevel": "off",
+    "designWidth": 240
+  },
+  "pages": [
+    "pages/index",
+    "pages/detail",
+    "pages/settings",
+    "pages/saves",
+    "pages/about"
+  ],
+  "router": {
+    "entry": "pages/index",
+    "pages": {
+      "pages/index": {
+        "component": "index"
+      },
+      "pages/detail": {
+        "component": "detail"
+      },
+      "pages/settings": {
+        "component": "settings"
+      },
+      "pages/saves": {
+        "component": "saves"
+      },
+      "pages/about": {
+        "component": "about"
+      }
+    }
+  }
+}

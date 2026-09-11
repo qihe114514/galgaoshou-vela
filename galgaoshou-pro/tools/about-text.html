@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=188, initial-scale=1">
+  <title>About text layer</title>
+  <style>
+    :root {
+      --pink: #f3cad8;
+      --pink-label: #df7da3;
+      --white: #ffffff;
+      --muted: #d3cbd3;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    /* 严格保留原始尺寸与背景 */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: transparent;
+      width: 188px;
+      min-height: 800px;
+      overflow: hidden;
+    }
+
+    body {
+      color: var(--white);
+      font-family: "苹方UI-简", "PingFang UI", "PingFang SC", "Noto Sans CJK SC", sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .layer {
+      width: 188px;
+      min-height: 800px;
+      padding: 0 2px 18px;    /* 保留原内边距 */
+      background: transparent; /* 保留透明背景 */
+    }
+
+    /* ---------- 标题 ---------- */
+    .game-title {
+      margin: 8px 0 2px;
+      color: var(--pink);
+      font-size: 23px;
+      font-weight: 700;
+      line-height: 30px;
+      text-align: center;
+      word-break: break-word;
+    }
+
+    /* ---------- 官方译名 ---------- */
+    .official-block {
+      margin-top: 6px;
+      padding: 6px 0 8px;
+      text-align: center;
+      border-top: 1px solid rgba(211, 203, 211, 0.15);   /* 弱化分隔线，不破坏透明感 */
+      border-bottom: 1px solid rgba(211, 203, 211, 0.15);
+    }
+
+    .official-label {
+      margin: 0;
+      color: var(--pink-label);
+      font-size: 14px;
+      font-weight: 600;
+      line-height: 1.4;
+      letter-spacing: 2px;
+    }
+
+    .official-name {
+      margin: 2px 0 0;
+      color: var(--white);
+      font-size: 20px;
+      font-weight: 600;
+      line-height: 1.3;
+      letter-spacing: 0.5px;
+      word-break: break-word;
+    }
+
+    /* ---------- 元数据（紧凑对齐） ---------- */
+    .meta-group {
+      margin-top: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;    /* 行间距紧凑 */
+    }
+
+    /* 每一行元数据：左侧标签，右侧值 */
+    .meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin: 0;
+      font-size: 14px;
+      line-height: 1.35;
+      color: var(--white);
+      word-break: break-word;
+    }
+
+    /* 标签部分（粉红） */
+    .meta .label {
+      color: var(--pink-label);
+      font-weight: 500;
+      flex-shrink: 0;
+      margin-right: 6px;
+      white-space: nowrap;   /* 标签不换行，节省空间 */
+    }
+
+    /* 值部分（白色，靠右对齐） */
+    .meta .value {
+      text-align: right;
+      flex: 1;
+      word-break: break-word;
+    }
+
+    /* ---------- 作品简介 ---------- */
+    .section-title {
+      margin: 14px 0 4px;
+      color: var(--pink-label);
+      font-size: 18px;
+      font-weight: 700;
+      line-height: 1.3;
+    }
+
+    .description {
+      margin: 0;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.45;
+      text-align: left;
+      word-break: break-word;
+    }
+  </style>
+</head>
+<body>
+  <main class="layer">
+    <h1 class="game-title">难道你是GAL高手</h1>
+
+    <section class="official-block">
+      <p class="official-label">官方译名</p>
+      <p class="official-name">Could You Be a Gal Master?</p>
+    </section>
+
+    <section class="meta-group">
+      <p class="meta"><span class="label">原作开发：</span><span class="value">GAL高手制作组</span></p>
+      <p class="meta"><span class="label">发行商：</span><span class="value">Nyads Games</span></p>
+      <p class="meta"><span class="label">移植作者：</span><span class="value">@其核</span></p>
+      <p class="meta"><span class="label">官方Q群</span><span class="value">1105166284</span></p>
+      <p class="meta"><span class="label">播放器修改：</span><span class="value">@liuyuze61</span></p>
+    </section>
+
+    <h2 class="section-title">作品简介</h2>
+    <p class="description">玩了多年游戏还是负KD的无口少女、顶级水平却不擅长画大雷的美少女画师、想打一辈子旮旯的富家千金、努力理解二次元为何物的现充妹妹。玩家将成为她们的男主，在名为“掐楼之家”的周边店里一同努力让店铺爆火，感情逐渐升温。</p>
+    <h2 class="section-title">项目说明</h2>
+    <p class="description">本项目是面向小米 Vela 设备的个人技术研究、学习与适配作品，用于探索设备上的应用开发与内容适配。</p>
+    <h2 class="section-title">权利声明</h2>
+    <p class="description">本项目不是《难道你是 GAL高手》的官方版本、授权移植或商业衍生产品，与 GAL高手制作组、Nyads Games 及其他相关权利方不存在从属、合作或授权关系。</p>
+    <p class="description">原作名称、角色、剧情、文字、图像、音乐及其他素材的相关权利归相应权利人所有。本项目不主张拥有上述内容的版权、商标权或其他权益。</p>
+    <h2 class="section-title">费用说明</h2>
+    <p class="description">页面所示 2 元费用仅用于分担内容整理、运行维护、设备适配及第三方人工智能服务等实际支出，不代表原作售价、正版购买资格或任何版权授权。</p>
+    <h2 class="section-title">使用约定</h2>
+    <p class="description">本项目仅供个人学习、技术研究、设备测试及非商业体验使用。请通过正规渠道支持原作，不得利用本项目进行商业宣传、冒充官方产品或未经许可再次分发。</p>
+    <h2 class="section-title">移除承诺</h2>
+    <p class="description">如权利人认为项目中的内容存在侵权或不当使用，请联系作者。收到有效通知后，将及时核实并根据情况删除、替换或停止分发相关内容。</p>
+    <p class="description">联系邮箱：3576325016@qq.com</p>
+    <p class="description">使用或继续使用本项目，即视为已阅读并理解以上说明；因使用、修改或传播本项目产生的相关责任由使用者自行承担。</p>
+  </main>
+</body>
+</html>
