@@ -1,0 +1,35 @@
+{
+  "name": "gal-master-band10",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "extract:source": "node tools/extract-prologue-from-assetripper.js tools/data/main-data.json",
+    "transform:story": "node tools/transform-story.js tools/data/main-data.json tools/data/generated/story.json tools/data/generated/assets.json",
+    "export:assets": "node tools/export-assetripper-resources.js tools/data/generated/assets.json src/common/images",
+    "review:phone-ocr": "node tools/review-phone-ocr.js",
+    "dedupe:assets": "node tools/dedupe-background-assets.js tools/data/generated/story.json tools/data/generated/assets.json src/common/images tools/data/generated/background-aliases.json",
+    "optimize:variants": "node tools/optimize-visual-variants.js tools/data/generated/story.json tools/data/generated/assets.json src/common/images",
+    "optimize:home": "node tools/optimize-home.js",
+    "refresh:story": "npm run extract:source && npm run transform:story && npm run export:assets && npm run transform:story && npm run optimize:variants && npm run dedupe:assets && npm run convert:story",
+    "convert:story": "node tools/convert-story-to-asunabi.js tools/data/generated/story.json src/common/story/chunks",
+    "validate:story": "node tools/validate-full-story.js tools/data/generated/story.json src/common/story/chunks src/common",
+    "validate:scenes": "node tools/validate-full-story.js tools/data/generated/story.json src/common/story/chunks src/common",
+    "test": "node --test tests/*.test.js",
+    "check": "npm run validate:story && npm test",
+    "build": "npm run optimize:home && aiot release",
+    "build:debug": "npm run optimize:home && aiot build",
+    "release": "aiot release",
+    "start": "aiot start"
+  },
+  "devDependencies": {
+    "@aiot-toolkit/jsc": "^1.0.3",
+    "aiot-toolkit": "2.0.5",
+    "dxt-js": "^0.0.3",
+    "sharp": "^0.34.2",
+    "tesseract.js": "^7.0.0",
+    "@tesseract.js-data/chi_sim": "^1.0.0"
+  },
+  "browserslist": [
+    "chrome 65"
+  ]
+}

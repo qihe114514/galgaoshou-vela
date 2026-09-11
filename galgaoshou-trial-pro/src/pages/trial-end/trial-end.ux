@@ -1,0 +1,58 @@
+<template>
+  <div class="page" @swipe="blockSystemBack">
+    <text class="title">试玩结束</text>
+    <text class="purchase-copy">完整版前往AstroBox购买</text>
+    <qrcode class="purchase-qr" value="https://astrobox.online/"></qrcode>
+    <text class="qr-copy">扫码了解AstroBox</text>
+    <text class="group-title">加入官方QQ群</text>
+    <text class="group-copy">群内抽取Steam原作CDK</text>
+    <image static class="group-qr" src="/common/qq-group-qrcode.png"></image>
+    <text class="group-number">群号 1105166284</text>
+    <text class="home-btn" @click="backHome">返回首页</text>
+  </div>
+</template>
+
+<script>
+import router from '@system.router'
+
+export default {
+  backHome() { router.replace({ uri: 'pages/trial-home' }) },
+  blockSystemBack() {}
+}
+</script>
+
+<style>
+.page { width: 212px; height: 520px; background-color: #160f16; flex-direction: column; align-items: center; }
+.title { width: 212px; margin-top: 16px; color: #ffffff; font-size: 26px; font-weight: bold; text-align: center; }
+.purchase-copy { width: 188px; margin-top: 8px; color: #f2c6d7; font-size: 17px; font-weight: bold; text-align: center; }
+.purchase-qr { width: 108px; height: 108px; margin-top: 8px; background-color: #ffffff; }
+.qr-copy { width: 188px; margin-top: 4px; color: #d9bac8; font-size: 13px; text-align: center; }
+.group-title { width: 188px; margin-top: 8px; color: #f2c6d7; font-size: 18px; font-weight: bold; text-align: center; }
+.group-copy { width: 188px; margin-top: 2px; color: #d9bac8; font-size: 12px; text-align: center; }
+.group-qr { width: 96px; height: 96px; margin-top: 6px; object-fit: contain; }
+.group-number { width: 188px; margin-top: 2px; color: #f2c6d7; font-size: 14px; font-weight: bold; text-align: center; }
+.home-btn { width: 176px; height: 40px; margin-top: 16px; background-color: #b95079; color: #ffffff; font-size: 19px; font-weight: bold; text-align: center; border-radius: 8px; }
+
+@media (shape: rect) {
+  .page { width: 212px; height: 303px; }
+  .title { width: 212px; margin-top: 8px; font-size: 18px; }
+  .purchase-copy { width: 188px; margin-top: 3px; font-size: 12px; }
+  .purchase-qr { width: 58px; height: 58px; margin-top: 3px; }
+  .qr-copy { width: 188px; margin-top: 2px; font-size: 9px; }
+  .group-title { width: 188px; margin-top: 4px; font-size: 12px; }
+  .group-copy { width: 188px; margin-top: 1px; font-size: 9px; }
+  .group-qr { width: 60px; height: 60px; margin-top: 3px; }
+  .group-number { width: 188px; margin-top: 1px; font-size: 10px; }
+  .home-btn { width: 164px; height: 30px; margin-top: 5px; font-size: 14px; border-radius: 8px; }
+}
+.page { width: 216px; height: 257px; }
+.title { width: 216px; margin-top: 8px; font-size: 16px; }
+.purchase-copy { width: 192px; margin-top: 4px; font-size: 11px; }
+.purchase-qr { width: 62px; height: 62px; margin-top: 4px; }
+.qr-copy { width: 192px; margin-top: 2px; font-size: 9px; }
+.group-title { width: 192px; margin-top: 5px; font-size: 13px; }
+.group-copy { width: 192px; margin-top: 2px; font-size: 9px; }
+.group-qr { width: 64px; height: 64px; margin-top: 4px; }
+.group-number { width: 192px; margin-top: 2px; font-size: 10px; }
+.home-btn { width: 184px; height: 29px; margin-top: 7px; font-size: 13px; border-radius: 7px; }
+</style>

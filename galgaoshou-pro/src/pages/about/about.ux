@@ -1,0 +1,38 @@
+<template>
+  <div class="page">
+    <text class="page-title">关于</text>
+    <scroll class="content" scroll-y="true" bounces="false" @swipe="blockSystemBack">
+      <image static class="about-text" src="/common/about-text.png"></image>
+      <div class="group-section">
+        <text class="group-title">加入官方QQ群</text>
+        <text class="group-copy">群内抽取Steam原作CDK</text>
+        <image static class="group-qr" src="/common/qq-group-qrcode.png"></image>
+        <text class="group-number">群号 1105166284</text>
+      </div>
+    </scroll>
+    <text class="back-btn" @click="back">返回</text>
+  </div>
+</template>
+
+<script>
+import router from '@system.router'
+
+export default {
+  back() { router.back() },
+  blockSystemBack() {}
+}
+</script>
+
+<style>
+.page { width: 216px; height: 257px; overflow: hidden; background-color: #17151a; flex-direction: column; align-items: center; }
+.page-title { width: 100%; height: 30px; line-height: 30px; color: #ffffff; font-size: 16px; font-weight: bold; text-align: center; }
+.content { width: 192px; flex: 1; overflow: hidden; flex-direction: column; flex-wrap: nowrap; }
+.about-text { width: 192px; height: 1416px; }
+.group-section { width: 192px; padding: 10px 0px 14px; flex-direction: column; align-items: center; }
+.group-title { width: 192px; color: #f2c6d7; font-size: 14px; font-weight: bold; text-align: center; }
+.group-copy { width: 192px; margin-top: 3px; color: #d9bac8; font-size: 9px; text-align: center; }
+.group-qr { width: 72px; height: 72px; margin-top: 6px; object-fit: contain; }
+.group-number { width: 192px; margin-top: 4px; color: #f2c6d7; font-size: 11px; font-weight: bold; text-align: center; }
+.back-btn { width: 192px; height: 30px; margin-top: 4px; margin-bottom: 5px; line-height: 30px; color: #ffffff; font-size: 13px; font-weight: bold; text-align: center; background-color: #302b33; border-radius: 7px; }
+</style>
+
