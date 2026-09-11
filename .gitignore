@@ -1,0 +1,9 @@
+node_modules/
+dist/
+build/
+.aiot/
+sign/
+*.rpk
+license-codes/
+.superpowers/
+**/tools/data/generated/
