@@ -1,0 +1,35 @@
+<template>
+  <div class="page" @swipe="blockSystemBack">
+    <text class="title">试玩结束</text>
+    <text class="purchase-copy">完整版前往AstroBox购买</text>
+    <qrcode class="purchase-qr" value="https://astrobox.online/"></qrcode>
+    <text class="qr-copy">扫码了解AstroBox</text>
+    <text class="group-title">加入官方QQ群</text>
+    <text class="group-copy">群内抽取Steam原作CDK</text>
+    <image static class="group-qr" src="/common/qq-group-qrcode.png"></image>
+    <text class="group-number">群号 1105166284</text>
+    <text class="home-btn" @click="backHome">返回首页</text>
+  </div>
+</template>
+
+<script>
+import router from '@system.router'
+
+export default {
+  backHome() { router.replace({ uri: 'pages/trial-home' }) },
+  blockSystemBack() {}
+}
+</script>
+
+<style>
+.page { width: 336px; height: 480px; background-color: #160f16; flex-direction: column; align-items: center; }
+.title { width: 336px; margin-top: 16px; color: #ffffff; font-size: 26px; font-weight: bold; text-align: center; }
+.purchase-copy { width: 288px; margin-top: 8px; color: #f2c6d7; font-size: 17px; font-weight: bold; text-align: center; }
+.purchase-qr { width: 108px; height: 108px; margin-top: 8px; background-color: #ffffff; }
+.qr-copy { width: 288px; margin-top: 4px; color: #d9bac8; font-size: 13px; text-align: center; }
+.group-title { width: 288px; margin-top: 8px; color: #f2c6d7; font-size: 18px; font-weight: bold; text-align: center; }
+.group-copy { width: 288px; margin-top: 2px; color: #d9bac8; font-size: 12px; text-align: center; }
+.group-qr { width: 96px; height: 96px; margin-top: 6px; object-fit: contain; }
+.group-number { width: 288px; margin-top: 2px; color: #f2c6d7; font-size: 14px; font-weight: bold; text-align: center; }
+.home-btn { width: 276px; height: 44px; margin-top: 16px; background-color: #b95079; color: #ffffff; font-size: 20px; font-weight: bold; text-align: center; border-radius: 8px; }
+</style>

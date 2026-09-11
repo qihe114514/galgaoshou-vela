@@ -1,0 +1,73 @@
+const assert = require('node:assert/strict')
+const fs = require('node:fs')
+const test = require('node:test')
+const { CHOICE_TARGETS, END_INDEX, convert } = require('../tools/transform-story')
+const { convert: convertScenes } = require('../tools/convert-story-to-asunabi')
+const { validate } = require('../tools/validate-full-story')
+
+const source = JSON.parse(fs.readFileSync('tools/data/main-data.json', 'utf8'))
+
+test('converts every original node and all explicit choice routes', () => {
+  const result = convert(source)
+  assert.equal(result.story.nodes.length, 4537)
+  assert.equal(result.story.entryId, 'd-0')
+  assert.equal(result.story.endId, `d-${END_INDEX}`)
+  for (const [index, targets] of Object.entries(CHOICE_TARGETS)) {
+    const node = result.story.nodes.find((item) => item.id === `d-${index}`)
+    assert.deepEqual(node.choices.map((choice) => Number(choice.target.slice(2))), targets)
+  }
+  const dayRoute = result.story.nodes.find((item) => item.id === 'd-3542')
+  assert.equal(dayRoute.choiceGroup, 'day-route-first')
+  assert.equal(dayRoute.choiceCompleteTarget, 'd-4146')
+  const dayRouteFollowUp = result.story.nodes.find((item) => item.id === 'd-3986')
+  assert.equal(dayRouteFollowUp.choiceGroup, 'day-route-second')
+  assert.equal(dayRouteFollowUp.choiceCompleteTarget, '')
+  assert.deepEqual(dayRoute.choices.map((choice) => choice.sourceIndex), [0, 1, 2, 3])
+  assert.deepEqual(dayRouteFollowUp.choices.map((choice) => choice.sourceIndex), [0, 1, 2, 3])
+  const d302 = result.story.nodes.find((item) => item.id === 'd-302')
+  assert.deepEqual(d302.characters.map((character) => character.key).sort(), ['MCL1a2', 'MM2b1'])
+  const d809 = result.story.nodes.find((item) => item.id === 'd-809')
+  assert.equal(d809.characters.some((character) => character.key === 'HXC2a2'), false)
+  const d1671 = result.story.nodes.find((item) => item.id === 'd-1671')
+  assert.deepEqual(d1671.characters, [])
+  assert.equal(d1671.sceneOverlay, null)
+  assert.equal(d1671.topRightOverlay, null)
+  assert.equal(d1671.centerOverlay, null)
+  assert.equal(d1671.cgImage, null)
+  const d57 = result.story.nodes.find((item) => item.id === 'd-57')
+  assert.equal(d57.cgImage.key, 'CG1_2')
+  const d1695 = result.story.nodes.find((item) => item.id === 'd-1695')
+  assert.deepEqual(d1695.characters, [])
+  assert.equal(d1695.sceneOverlay, null)
+  assert.equal(d1695.centerOverlay, null)
+  assert.deepEqual(validate(result.story), [])
+})
+
+test('converts cross-route jumps to relative scene offsets', () => {
+  const result = convert(source)
+  const scenes = convertScenes(result.story)
+  assert.equal(scenes.length, 4537)
+  const dayRouteScene = scenes[result.story.nodes.findIndex((node) => node.id === 'd-3542')]
+  assert.equal(dayRouteScene.choiceCompleteScene, result.story.nodes.findIndex((node) => node.id === 'd-4146'))
+  assert.equal(scenes[result.story.nodes.findIndex((node) => node.id === 'd-4597')].dialogues[0].END, '游戏结束')
+  for (const index of [193, 808, 3542, 3986]) assert.ok(scenes[result.story.nodes.findIndex((node) => node.id === `d-${index}`)].choices.every((choice) => Number.isInteger(choice.nextScene)))
+})
+
+test('creates reachable automatic chapters and carries them into scenes', () => {
+  const result = convert(source)
+  assert.equal(result.story.chapters[0].startId, 'd-0')
+  assert.ok(result.story.chapters.some((chapter) => chapter.startId === 'd-193'))
+  assert.ok(result.story.chapters.every((chapter) => result.story.nodes.some((node) => node.id === chapter.startId)))
+  const scenes = convertScenes(result.story)
+  assert.equal(typeof scenes[0].chapter, 'number')
+  assert.equal(scenes[0].chapterStart, true)
+})
+
+test('attaches phone OCR only to the scene that shows the phone overlay', () => {
+  const copy = JSON.parse(JSON.stringify(source))
+  const item = copy.m_Structure.MainDataList.find((node) => node.dialogueIndex === 0)
+  item.effectInterActions = [{ Value00: 'OverlayImage', Value01: 'phone-fixture', Value02: 'Show', Value03: 'Center' }]
+  const result = convert(copy, {}, { 'phone-fixture': '测试消息' })
+  assert.equal(result.story.nodes.find((node) => node.id === 'd-0').phoneText, '测试消息')
+  assert.equal(result.story.nodes.find((node) => node.id === 'd-1').phoneText, '')
+})
