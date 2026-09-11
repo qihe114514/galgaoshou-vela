@@ -1,0 +1,63 @@
+<template>
+  <div class="page" @swipe="blockSystemBack">
+    <image static class="home-background" src="/common/home.png"></image>
+    <div class="home-shade"></div>
+    <image id="trial-logo" static class="home-logo {{motionStaticClass}}" src="/common/logo.png"></image>
+    <div id="trial-panel" class="home-panel {{motionStaticClass}}">
+      <text class="trial-copy">试玩版</text>
+      <text class="primary-action" @click="startTrial">开始试玩</text>
+      <div id="trial-action-row" class="action-row {{motionStaticClass}}">
+        <text class="compact-action" @click="openSettings">设置</text>
+        <text class="compact-action" @click="openAbout">关于</text>
+      </div>
+      <text id="trial-purchase" class="purchase-action {{motionStaticClass}}" @click="openPurchase">购买完整版</text>
+      <text id="trial-exit" class="exit-action {{motionStaticClass}}" @click="exitApp">退出</text>
+    </div>
+  </div>
+</template>
+
+<script>
+import router from '@system.router'
+import createPageMotion from '../../common/page-motion'
+
+const TRIAL_INITIAL_STATE = { 'trial-logo': '-180px', 'trial-panel': '223px', 'trial-action-row': '223px', 'trial-purchase': '223px', 'trial-exit': '223px' }
+
+export default {
+  private: { motionStaticClass: '' },
+  onInit() { this.motion = createPageMotion(TRIAL_INITIAL_STATE, () => { this.motionStaticClass = 'motion-static' }) },
+  onShow() { this.playIntro() },
+  onHide() { if (this.motion) this.motion.cancel() },
+  onDestroy() { if (this.motion) this.motion.cancel() },
+  playIntro() {
+    if (!this.motion) return
+    this.motionStaticClass = ''
+    this.motion.play([
+      { ids: ['trial-logo', 'trial-panel'], delay: 0 },
+      { ids: ['trial-action-row'], delay: 180 },
+      { ids: ['trial-purchase'], delay: 260 },
+      { ids: ['trial-exit'], delay: 340 }
+    ], 200)
+  },
+  startTrial() { router.push({ uri: 'pages/detail' }) },
+  openSettings() { router.push({ uri: 'pages/settings' }) },
+  openAbout() { router.push({ uri: 'pages/about' }) },
+  openPurchase() { router.push({ uri: 'pages/trial-end' }) },
+  exitApp() { this.$app.exit() },
+  blockSystemBack() {}
+}
+</script>
+
+<style>
+.page { width: 192px; height: 490px; overflow: hidden; background-color: #160f16; }
+.home-background { position: absolute; top: 0px; left: 0px; width: 192px; height: 490px; object-fit: cover; }
+.home-shade { position: absolute; top: 0px; left: 0px; width: 192px; height: 490px; background-color: #240f1a; opacity: 0.10; }
+.home-logo { position: absolute; top: 90px; left: 14px; width: 163px; height: 93px; background-color: transparent; object-fit: contain; transform: translateY(-180px); }
+.home-panel { position: absolute; top: 267px; left: 0px; width: 192px; height: 223px; background-color: rgba(255,242,246,0.78); border-radius: 14px 14px 0px 0px; flex-direction: column; align-items: center; transform: translateY(223px); }
+.trial-copy { width: 192px; height: 19px; margin-top: 8px; color: #754056; font-size: 15px; font-weight: bold; text-align: center; }
+.primary-action { width: 159px; height: 45px; margin-top: 8px; background-color: #b95079; color: #ffffff; font-size: 22px; font-weight: bold; text-align: center; border-radius: 10px; }
+.action-row { width: 159px; height: 36px; margin-top: 6px; flex-direction: row; justify-content: space-between; transform: translateY(223px); }
+.compact-action { width: 76px; height: 36px; background-color: #ead1da; color: #722c4b; font-size: 17px; font-weight: bold; text-align: center; border-radius: 10px; }
+.purchase-action { width: 159px; height: 38px; margin-top: 6px; background-color: #ead1da; color: #722c4b; font-size: 19px; font-weight: bold; text-align: center; border-radius: 10px; transform: translateY(223px); }
+.exit-action { width: 130px; height: 38px; margin-top: 6px; background-color: #ead1da; color: #722c4b; font-size: 19px; font-weight: bold; text-align: center; border-radius: 10px; transform: translateY(223px); }
+.motion-static { transform: translateY(0px); }
+</style>
