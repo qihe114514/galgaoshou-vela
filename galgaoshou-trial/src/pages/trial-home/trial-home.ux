@@ -1,0 +1,59 @@
+<template>
+  <div class="page" @swipe="blockSystemBack">
+    <image static class="home-background" src="/common/home-pro.png"></image>
+    <div class="home-shade"></div>
+    <image id="trial-logo" static class="home-logo {{motionStaticClass}}" src="/common/logo.png"></image>
+    <div id="trial-panel" class="home-panel {{motionStaticClass}}">
+      <text class="trial-copy">试玩版</text>
+      <text class="primary-action" @click="startTrial">开始试玩</text>
+      <div id="trial-action-row" class="action-row {{motionStaticClass}}">
+        <text class="compact-action" @click="openSettings">设置</text>
+        <text class="compact-action" @click="openAbout">关于</text>
+      </div>
+      <text id="trial-purchase" class="purchase-action {{motionStaticClass}}" @click="openPurchase">购买完整版</text>
+      <text id="trial-exit" class="exit-action {{motionStaticClass}}" @click="exitApp">退出</text>
+    </div>
+  </div>
+</template>
+
+<script>
+import router from '@system.router'
+
+export default {
+  private: { motionStaticClass: 'motion-static' },
+  startTrial() { router.push({ uri: 'pages/detail' }) },
+  openSettings() { router.push({ uri: 'pages/settings' }) },
+  openAbout() { router.push({ uri: 'pages/about' }) },
+  openPurchase() { router.push({ uri: 'pages/trial-end' }) },
+  exitApp() { this.$app.exit() },
+  blockSystemBack() {}
+}
+</script>
+
+<style>
+.page { width: 212px; height: 520px; overflow: hidden; background-color: #160f16; }
+.home-background { position: absolute; top: 0px; left: 0px; width: 212px; height: 520px; object-fit: cover; }
+.home-shade { position: absolute; top: 0px; left: 0px; width: 212px; height: 520px; background-color: #240f1a; opacity: 0.10; }
+.home-logo { position: absolute; top: 96px; left: 16px; width: 180px; height: 102px; background-color: transparent; object-fit: contain; transform: translateY(-198px); }
+.home-panel { position: absolute; top: 284px; left: 0px; width: 212px; height: 236px; background-color: #f5e1e8; border-radius: 14px 14px 0px 0px; flex-direction: column; align-items: center; transform: translateY(236px); }
+.trial-copy { width: 212px; height: 20px; margin-top: 10px; color: #754056; font-size: 15px; font-weight: bold; text-align: center; }
+.primary-action { width: 176px; height: 48px; margin-top: 8px; background-color: #b95079; color: #ffffff; font-size: 22px; font-weight: bold; text-align: center; border-radius: 10px; }
+.action-row { width: 176px; height: 36px; margin-top: 6px; flex-direction: row; justify-content: space-between; transform: translateY(236px); }
+.compact-action { width: 84px; height: 36px; background-color: #ead1da; color: #722c4b; font-size: 17px; font-weight: bold; text-align: center; border-radius: 10px; }
+.purchase-action { width: 176px; height: 40px; margin-top: 6px; background-color: #ead1da; color: #722c4b; font-size: 19px; font-weight: bold; text-align: center; border-radius: 10px; transform: translateY(236px); }
+.exit-action { width: 144px; height: 40px; margin-top: 6px; background-color: #ead1da; color: #722c4b; font-size: 19px; font-weight: bold; text-align: center; border-radius: 10px; transform: translateY(236px); }
+.motion-static { transform: translateY(0px); }
+
+@media (shape: rect) {
+  .page { width: 212px; height: 303px; }
+  .home-background, .home-shade { width: 212px; height: 303px; }
+  .home-logo { top: 18px; left: 36px; width: 140px; height: 80px; }
+  .home-panel { top: 118px; width: 212px; height: 185px; border-radius: 12px 12px 0px 0px; }
+  .trial-copy { width: 188px; height: 16px; margin-top: 6px; font-size: 13px; }
+  .primary-action { width: 164px; height: 38px; margin-top: 6px; font-size: 16px; border-radius: 8px; }
+  .action-row { width: 164px; height: 30px; margin-top: 5px; }
+  .compact-action { width: 78px; height: 30px; font-size: 13px; border-radius: 8px; }
+  .purchase-action { width: 164px; height: 30px; margin-top: 5px; font-size: 14px; border-radius: 8px; }
+  .exit-action { width: 164px; height: 30px; margin-top: 6px; font-size: 14px; border-radius: 8px; }
+}
+</style>

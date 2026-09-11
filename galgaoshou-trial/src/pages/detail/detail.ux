@@ -1,0 +1,554 @@
+<template>
+  <div class="page">
+    <div class="page game-page" @click="nextDialogue" if="{{!menu && recovery === 0 && !showChoice && !showEnd}}">
+      <scroll id="bg-horizontal-scroll" scroll-x="true" scroll-y="false" bounces="false" class="background-scroll" if="{{Img && backgroundMode === 'horizontal'}}" @swipe="blockSystemBack">
+        <image class="background-horizontal" src="{{Img}}"></image>
+      </scroll>
+      <scroll id="bg-vertical-scroll" scroll-x="false" scroll-y="true" bounces="false" class="background-vertical-scroll" if="{{Img && backgroundMode === 'vertical'}}" @swipe="blockSystemBack">
+        <div class="background-vertical-track"><image class="background-vertical" src="{{Img}}"></image></div>
+      </scroll>
+      <image id="bg-static" class="background" src="{{Img}}" if="{{Img && !backgroundMode && !isCg}}" @swipe="blockSystemBack"></image>
+      <scroll id="cg-scroll" scroll-x="true" scroll-y="false" bounces="false" class="cg-scroll" if="{{Img && isCg}}" @swipe="blockSystemBack">
+        <image class="cg-image" src="{{Img}}"></image>
+      </scroll>
+      <image class="person-single" src="{{stageSingleImage}}" if="{{stageSingleImage && !isFullScreenCg}}" @swipe="blockSystemBack"></image>
+      <image class="person-duo-left" src="{{stageDuoLeftImage}}" if="{{stageDuoLeftImage && !isFullScreenCg}}" @swipe="blockSystemBack"></image>
+      <image class="person-duo-right" src="{{stageDuoRightImage}}" if="{{stageDuoRightImage && !isFullScreenCg}}" @swipe="blockSystemBack"></image>
+      <image class="person-trio-left" src="{{stageTrioLeftImage}}" if="{{stageTrioLeftImage && !isFullScreenCg}}" @swipe="blockSystemBack"></image>
+      <image class="person-trio-center" src="{{stageTrioCenterImage}}" if="{{stageTrioCenterImage && !isFullScreenCg}}" @swipe="blockSystemBack"></image>
+      <image class="person-trio-right" src="{{stageTrioRightImage}}" if="{{stageTrioRightImage && !isFullScreenCg}}" @swipe="blockSystemBack"></image>
+      <image class="person-single" src="{{stageOverlayImage}}" if="{{stageOverlayImage && !isFullScreenCg}}" @swipe="blockSystemBack"></image>
+      <image class="scene-overlay" src="{{sceneOverlayImage}}" if="{{sceneOverlayImage}}" @swipe="blockSystemBack"></image>
+      <image class="center-overlay" src="{{centerOverlayImage}}" if="{{centerOverlayImage}}" @swipe="blockSystemBack"></image>
+      <image class="top-right-overlay" src="{{topRightOverlayImage}}" if="{{topRightOverlayImage}}" @swipe="blockSystemBack"></image>
+      <text class="trial-label" if="{{dialogueVisible}}" @swipe="blockSystemBack">试玩版</text>
+      <div class="dialogue-panel" if="{{dialogueVisible}}" @swipe="blockSystemBack"></div>
+      <text class="character-name" if="{{dialogueVisible}}" @swipe="blockSystemBack">{{character}}</text>
+      <scroll scroll-y="true" bounces="true" class="scroll" id="scroll" if="{{dialogueVisible}}" @swipe="blockSystemBack">
+        <div class="dialogue-content">
+          <text class="dialogue-text dialogue-text-small" if="{{textSmall}}">{{showText}}</text>
+          <text class="dialogue-text dialogue-text-medium" if="{{textMedium}}">{{showText}}</text>
+          <text class="dialogue-text dialogue-text-large" if="{{textLarge}}">{{showText}}</text>
+        </div>
+      </scroll>
+    </div>
+
+    <div class="page choice-page" if="{{showChoice}}" @swipe="blockSystemBack">
+      <scroll scroll-y="true" bounces="true" class="choice-list">
+        <div class="choice-grid">
+          <text class="choice" for="{{choices}}" @click="selectChoice($idx)">{{$item.text}}</text>
+        </div>
+      </scroll>
+      <div class="menu-trigger-hit" @click="openMenu"><text class="menu-trigger">≡</text></div>
+    </div>
+
+    <div class="menu-trigger-hit" if="{{!menu && recovery === 0 && !showEnd && !showChoice}}" @click="openMenu"><text class="menu-trigger">≡</text></div>
+
+    <div class="page menu-page" if="{{menu}}" @swipe="back">
+      <text class="menu-heading">阅读菜单</text>
+      <div class="menu-status">
+        <text class="chapter-label">{{chapterLabel}}</text>
+        <text class="scene-progress">{{sceneProgress}}</text>
+      </div>
+      <text class="menu-btn" @click="skipScene(1)">跳过场景</text>
+      <text class="menu-btn" @click="skipChapter">跳过章节</text>
+      <div class="menu-row">
+        <text class="menu-small-btn" @click="openSettingsPage">设置</text>
+        <text class="menu-small-btn" @click="back('e')">主页</text>
+      </div>
+      <text class="menu-close" @click="closeMenu">返回阅读</text>
+    </div>
+
+    <div class="page end-page" if="{{showEnd}}" @swipe="back">
+      <text class="end-title">达成结局</text>
+      <text class="end-text">{{END}}</text>
+      <text class="end-action" @click="back('e')">返回主页</text>
+    </div>
+  </div>
+</template>
+
+<script>
+import router from '@system.router'
+import storage from '@system.storage'
+import prompt from '@system.prompt'
+import file from '@system.file'
+
+const EMPTY_SCENE = { background: '', backgroundMotion: '', characters: [], stageSingleImage: '', stageDuoLeftImage: '', stageDuoRightImage: '', stageTrioLeftImage: '', stageTrioCenterImage: '', stageTrioRightImage: '', stageOverlayImage: '', sceneOverlayImage: '', topRightOverlayImage: '', centerOverlayImage: '', dialogues: null, choices: null, choiceGroup: '', choiceCompleteScene: -1 }
+const DEFAULT_SETTINGS = { textSpeed: 25, textSize: 22 }
+const DEFAULT_ROUTE_STATE = { 'day-route-first': [], 'day-route-second': [] }
+
+export default {
+  protected: { load: '', auto: '' },
+  private: {
+    gameData: { scenes: [], nodeCount: 0, chunkStart: 0, chunks: [] }, storyIndex: null, scene: EMPTY_SCENE, index: 0, canContinue: true,
+    currentScene: 0, currentDialogue: 0, Img: '', showText: '', typingText: '', character: '', settings: DEFAULT_SETTINGS, textSize: 22,
+    stageSingleImage: '', stageDuoLeftImage: '', stageDuoRightImage: '', stageTrioLeftImage: '', stageTrioCenterImage: '', stageTrioRightImage: '', stageOverlayImage: '', sceneOverlayImage: '', centerOverlayImage: '', topRightOverlayImage: '', choices: [], dialogueVisible: false, showChoice: false, showEnd: false, textSmall: true, textMedium: false, textLarge: false,
+    chapter: 0, chapterLabel: '第1章', sceneProgress: '场景 1', menu: false, recovery: 0, choice: [], routeState: DEFAULT_ROUTE_STATE, recoveryData: [], loadSlot: null, restoring: false, END: '', backgroundMode: '', isCg: false, isFullScreenCg: false, cgGroup: '', cgToken: 0, backgroundMotionToken: 0, loadingScene: false, typingToken: 0, typingStartedAt: 0, autoSaveDialogueCount: 0, saveDirty: false, saveTimer: null, chunkCache: {}, chunkRequests: {}
+  },
+  onInit() {
+    this.loadSettings()
+    this.initializeGame()
+  },
+  initializeGame() {
+    const loadRequestedState = () => {
+      if (this.auto !== '1') return this.loadData()
+      storage.get({
+        key: 'autoSave',
+        success: (data) => {
+          try {
+            const saved = JSON.parse(data)
+            if (Number.isInteger(Number(saved && saved.currentScene)) && Number(saved.currentScene) >= 0 && Number(saved.currentScene) < 315) this.restoreData(saved)
+          } catch (error) {}
+          this.loadData()
+        },
+        fail: () => this.loadData()
+      })
+    }
+    storage.get({
+      key: 'recoveryData',
+      success: (data) => {
+        try { this.recoveryData = Array.isArray(JSON.parse(data)) ? JSON.parse(data) : [] } catch (error) { this.recoveryData = [] }
+        const rawLoad = this.load
+        if (rawLoad !== undefined && rawLoad !== null && rawLoad !== '') {
+          const slot = Number(rawLoad)
+          if (!Number.isInteger(slot) || slot < 0 || !this.recoveryData[slot]) {
+            prompt.showToast({ message: '存档不存在' })
+            return
+          }
+          this.loadSlot = slot
+          this.restoreData(this.recoveryData[slot])
+          this.loadData()
+          return
+        }
+        loadRequestedState()
+      },
+      fail: () => loadRequestedState()
+    })
+  },
+  onShow() { this.loadSettings(); this.restartBackgroundMotion() },
+  onHide() { this.typingToken += 1; this.cgToken += 1; this.stopBackgroundMotion(); this.flushAutoSave() },
+  onDestroy() { this.typingToken += 1; this.cgToken += 1; this.stopBackgroundMotion(); this.flushAutoSave(); this.chunkCache = {}; this.chunkRequests = {} },
+  loadSettings() {
+    storage.get({ key: 'settings', success: (data) => { try { const saved = JSON.parse(data); this.settings = Object.assign({}, DEFAULT_SETTINGS, saved, { textSpeed: Number.isFinite(Number(saved.textSpeed)) ? Number(saved.textSpeed) : DEFAULT_SETTINGS.textSpeed, textSize: Number.isFinite(Number(saved.textSize)) ? Number(saved.textSize) : DEFAULT_SETTINGS.textSize }); this.setTextSize(this.settings.textSize) } catch (error) {} }, fail: () => {} })
+  },
+  loadData() {
+    file.readText({ uri: '/common/story/story-index.txt', success: (data) => {
+      try {
+        this.storyIndex = JSON.parse(data.text)
+        this.gameData.nodeCount = this.storyIndex.nodeCount
+        this.gameData.chunks = this.storyIndex.chunks || []
+        this.loadScene(this.currentScene)
+      } catch (error) { prompt.showToast({ message: '完整剧本读取失败' }) }
+    }, fail: () => prompt.showToast({ message: '找不到游戏剧本' }) })
+  },
+  showBackground(image, motion, cgImage) {
+    const isCg = Boolean(cgImage)
+    const cgGroup = isCg ? String(cgImage.key || '').split('_')[0] : ''
+    const isFullScreenCg = isCg && cgImage.anchor === 'FullScreen'
+    const shouldCenterCg = isCg && (!this.isCg || this.cgGroup !== cgGroup)
+    if (this.Img === image && this.backgroundMode === motion && this.isCg === isCg && this.isFullScreenCg === isFullScreenCg) return
+    this.Img = image || ''
+    this.backgroundMode = motion || ''
+    this.isCg = isCg
+    this.isFullScreenCg = isFullScreenCg
+    this.cgGroup = cgGroup
+    this.cgToken += 1
+    this.stopBackgroundMotion()
+    if (!isCg && (motion === 'horizontal' || motion === 'vertical')) this.startBackgroundMotion(motion)
+    const token = this.cgToken
+    if (shouldCenterCg) setTimeout(() => { if (this.isCg && this.cgToken === token) this.$element('cg-scroll').scrollTo({ top: 0, left: 240, behavior: 'instant' }) }, 0)
+  },
+  stopBackgroundMotion() {
+    this.backgroundMotionToken += 1
+  },
+  restartBackgroundMotion() {
+    if (this.isCg || !this.Img || !this.backgroundMode) return
+    this.stopBackgroundMotion()
+    this.startBackgroundMotion(this.backgroundMode)
+  },
+  startBackgroundMotion(motion) {
+    const token = this.backgroundMotionToken
+    if (motion === 'horizontal') return this.startHorizontalBackgroundMotion(token)
+    return this.startVerticalBackgroundMotion(token)
+  },
+  scrollBackground(id, left, top) {
+    try {
+      const element = this.$element(id)
+      if (!element || typeof element.scrollTo !== 'function') return false
+      element.scrollTo({ left, top, behavior: 'instant' })
+      return true
+    } catch (error) {
+      return false
+    }
+  },
+  startVerticalBackgroundMotion(token) {
+    const travel = 8
+    const duration = 5000
+    const move = (from, to) => {
+      const startedAt = Date.now()
+      const tick = () => {
+        if (token !== this.backgroundMotionToken) return
+        const progress = Math.min(1, (Date.now() - startedAt) / duration)
+        const top = Math.round(from + (to - from) * progress)
+        this.scrollBackground('bg-vertical-scroll', 0, top)
+        if (progress < 1) return setTimeout(tick, 50)
+        move(to, from)
+      }
+      tick()
+    }
+    setTimeout(() => move(0, travel), 0)
+  },
+  startHorizontalBackgroundMotion(token) {
+    const travel = 308
+    const duration = 5000
+    const move = (from, to) => {
+      const startedAt = Date.now()
+      const tick = () => {
+        if (token !== this.backgroundMotionToken) return
+        const progress = Math.min(1, (Date.now() - startedAt) / duration)
+        const left = Math.round(from + (to - from) * progress)
+        this.scrollBackground('bg-horizontal-scroll', left, 0)
+        if (progress < 1) return setTimeout(tick, 50)
+        move(to, from)
+      }
+      tick()
+    }
+    setTimeout(() => move(0, travel), 0)
+  },
+  showDialogue(dialogue, countForAutoSave = true) {
+    this.typingToken += 1
+    this.typingText = [dialogue.text || '', dialogue.phoneText ? `手机内容：\n${dialogue.phoneText}` : ''].filter(Boolean).join('\n')
+    this.showText = ''
+    this.character = dialogue.character || ''
+    this.canContinue = false
+    this.index = 0
+    this.typingStartedAt = Date.now()
+    if (this.settings.textSpeed === 0) {
+      this.finishTyping()
+      if (countForAutoSave) this.recordAutoSaveDialogue()
+      return
+    }
+    this.zhuzi(this.typingToken)
+    if (countForAutoSave) this.recordAutoSaveDialogue()
+  },
+  zhuzi(token) {
+    if (token !== this.typingToken) return
+    const speed = Number(this.settings.textSpeed) || 0
+    if (speed <= 0) return this.finishTyping(token)
+    const elapsed = Math.max(0, Date.now() - this.typingStartedAt)
+    this.index = Math.min(this.typingText.length, Math.max(this.index + 1, Math.floor(elapsed / speed) + 1))
+    this.showText = this.typingText.slice(0, this.index)
+    if (this.index >= this.typingText.length) return this.finishTyping(token)
+    setTimeout(() => this.zhuzi(token), 50)
+  },
+  finishTyping(token) {
+    if (token !== undefined && token !== this.typingToken) return
+    this.typingToken += 1
+    this.showText = this.typingText
+    this.index = this.typingText.length
+    this.canContinue = true
+  },
+  loadScene(sceneIndex) {
+    if (sceneIndex >= 315) return router.replace({ uri: 'pages/trial-end' })
+    if (!this.storyIndex || sceneIndex < 0 || sceneIndex >= this.gameData.nodeCount) return prompt.showToast({ message: '游戏场景不存在' })
+    const chunk = this.gameData.chunks.find((item) => sceneIndex >= item.start && sceneIndex < item.start + item.count)
+    if (!chunk) return prompt.showToast({ message: '游戏场景索引损坏' })
+    if (sceneIndex >= this.gameData.chunkStart && sceneIndex < this.gameData.chunkStart + this.gameData.scenes.length) {
+      this.renderScene(sceneIndex, this.gameData.scenes[sceneIndex - this.gameData.chunkStart])
+      return
+    }
+    this.loadingScene = true
+    this.readChunk(chunk, (scenes) => {
+      this.gameData.scenes = scenes
+      this.gameData.chunkStart = chunk.start
+      this.loadingScene = false
+      this.renderScene(sceneIndex, scenes[sceneIndex - chunk.start])
+    }, () => { this.loadingScene = false })
+  },
+  readChunk(chunk, success, fail) {
+    const cached = this.chunkCache[chunk.start]
+    if (cached) return success(cached)
+    const pending = this.chunkRequests[chunk.start]
+    if (pending) { pending.push({ success, fail }); return }
+    this.chunkRequests[chunk.start] = [{ success, fail }]
+    const finish = (scenes, error) => {
+      const waiters = this.chunkRequests[chunk.start] || []
+      delete this.chunkRequests[chunk.start]
+      if (error) { waiters.forEach((waiter) => waiter.fail()); return }
+      this.chunkCache[chunk.start] = scenes
+      waiters.forEach((waiter) => waiter.success(scenes))
+    }
+    file.readText({ uri: chunk.file, success: (data) => {
+      try {
+        const scenes = JSON.parse(data.text)
+        if (!Array.isArray(scenes) || scenes.length !== chunk.count) throw new Error('chunk')
+        finish(scenes)
+      } catch (error) { prompt.showToast({ message: '游戏场景读取失败' }); finish(null, error) }
+    }, fail: () => { prompt.showToast({ message: '游戏资源缺失' }); finish(null, true) } })
+  },
+  trimChunkCache(sceneIndex) {
+    const current = this.gameData.chunks.find((item) => sceneIndex >= item.start && sceneIndex < item.start + item.count)
+    const position = this.gameData.chunks.indexOf(current)
+    const keep = new Set([current && current.start, position >= 0 && this.gameData.chunks[position + 1] && this.gameData.chunks[position + 1].start])
+    for (const start of Object.keys(this.chunkCache)) if (!keep.has(Number(start))) delete this.chunkCache[start]
+  },
+  prefetchNextChunk(sceneIndex) {
+    const current = this.gameData.chunks.find((item) => sceneIndex >= item.start && sceneIndex < item.start + item.count)
+    const position = this.gameData.chunks.indexOf(current)
+    const next = position >= 0 ? this.gameData.chunks[position + 1] : null
+    if (!next || this.chunkCache[next.start]) return
+    this.readChunk(next, () => {}, () => {})
+  },
+  renderScene(sceneIndex, scene) {
+    if (!scene) return prompt.showToast({ message: '游戏场景不存在' })
+    this.currentScene = sceneIndex
+    const selected = scene.choiceGroup ? this.routeState[scene.choiceGroup] || [] : []
+    if (scene.choices && scene.choiceGroup && Number.isInteger(scene.choiceCompleteScene) && scene.choiceCompleteScene >= 0 && selected.length >= scene.choices.length) {
+      this.loadScene(scene.choiceCompleteScene)
+      return
+    }
+    const characters = scene.characters || []
+    const choices = scene.choices && scene.choiceGroup ? scene.choices.filter((choice) => !selected.includes(choice.sourceIndex)) : scene.choices
+    const layout = Object.assign({}, this.stageLayout(characters), this.overlayLayout(scene))
+    this.scene = Object.assign({}, EMPTY_SCENE, scene, layout, { characters, choices })
+    this.stageSingleImage = layout.stageSingleImage
+    this.stageDuoLeftImage = layout.stageDuoLeftImage
+    this.stageDuoRightImage = layout.stageDuoRightImage
+    this.stageTrioLeftImage = layout.stageTrioLeftImage
+    this.stageTrioCenterImage = layout.stageTrioCenterImage
+    this.stageTrioRightImage = layout.stageTrioRightImage
+    this.stageOverlayImage = layout.stageOverlayImage
+    this.sceneOverlayImage = layout.sceneOverlayImage
+    this.centerOverlayImage = layout.centerOverlayImage
+    this.topRightOverlayImage = layout.topRightOverlayImage
+    this.choices = choices || []
+    this.showChoice = Boolean(scene.choices)
+    this.dialogueVisible = !this.showChoice
+    this.showEnd = false
+    this.END = ''
+    this.setTextSize(this.settings.textSize)
+    this.chapter = scene.chapter || 0
+    const chapter = this.storyIndex && this.storyIndex.chapters ? this.storyIndex.chapters[this.chapter] : null
+    this.chapterLabel = chapter && chapter.title ? chapter.title : `第${this.chapter + 1}章`
+    this.sceneProgress = `场景 ${sceneIndex + 1}`
+    this.prefetchNextChunk(sceneIndex)
+    this.trimChunkCache(sceneIndex)
+    this.showBackground(scene.cgImage ? scene.cgImage.image : scene.background, scene.cgImage ? '' : scene.backgroundMotion, scene.cgImage)
+    if (scene.choices) { this.restoring = false; return }
+    const restored = this.restoring
+    if (!restored) this.currentDialogue = 0
+    this.currentDialogue = Math.min(this.currentDialogue, scene.dialogues.length - 1)
+    this.restoring = false
+    this.showDialogue(scene.dialogues[this.currentDialogue], !restored)
+  },
+  nextDialogue() {
+    if (this.loadingScene || this.scene.choices || this.END) return
+    if (!this.canContinue) return this.finishTyping()
+    this.scrollToTop(); this.canContinue = false
+    const dialogues = this.scene.dialogues
+    if (this.currentDialogue < dialogues.length - 1) { this.currentDialogue += 1; this.showDialogue(dialogues[this.currentDialogue]); return }
+    const dialogue = dialogues[this.currentDialogue]
+    if (dialogue.END) { this.END = dialogue.END; this.showEnd = true; this.dialogueVisible = false; return }
+    this.loadScene(dialogue.toScenes === undefined ? this.currentScene + 1 : this.currentScene + dialogue.toScenes)
+  },
+  blockSystemBack() {},
+  openMenu() { if (!this.showEnd && this.recovery === 0) this.menu = true },
+  closeMenu() { this.menu = false },
+  back(action) {
+    if ((action && (action.direction === 'left' || action.direction === 'right')) || action === 'c') { if (this.recovery !== 0) this.recovery = 0; else if (this.menu) this.menu = false }
+    else if (action === 'e') router.replace({ uri: 'pages/trial-home' })
+  },
+  selectChoice(choiceIndex) { const choice = this.scene.choices && this.scene.choices[choiceIndex]; if (!choice || this.loadingScene) return; this.choice.push(choice.sourceIndex === undefined ? choiceIndex : choice.sourceIndex); if (this.scene.choiceGroup) { const selected = this.routeState[this.scene.choiceGroup] || []; if (!selected.includes(choice.sourceIndex)) this.routeState[this.scene.choiceGroup] = selected.concat([choice.sourceIndex]) }; this.loadScene(this.currentScene + choice.nextScene) },
+  openSettingsPage() { this.menu = false; router.push({ uri: 'pages/settings' }) },
+  toRecoveryPage(page) { this.recovery = page },
+  buildSaveData() {
+    const routeState = this.routeState || DEFAULT_ROUTE_STATE
+    return { storyId: 'gal-master-trial', chapter: this.chapter, currentScene: this.currentScene, currentDialogue: this.currentDialogue, savedAt: Date.now(), choice: (this.choice || []).slice(), routeState: { 'day-route-first': Array.isArray(routeState['day-route-first']) ? routeState['day-route-first'].slice() : [], 'day-route-second': Array.isArray(routeState['day-route-second']) ? routeState['day-route-second'].slice() : [] }, settings: Object.assign({}, this.settings) }
+  },
+  recordAutoSaveDialogue() {
+    this.autoSaveDialogueCount += 1
+    if (this.autoSaveDialogueCount < 10) return
+    this.autoSaveDialogueCount = 0
+    this.saveDirty = true
+    if (this.saveTimer && typeof clearTimeout === 'function') clearTimeout(this.saveTimer)
+    this.saveTimer = setTimeout(() => { this.saveTimer = null; this.flushAutoSave() }, 300)
+  },
+  flushAutoSave() {
+    if (!this.saveDirty) return
+    if (this.saveTimer && typeof clearTimeout === 'function') clearTimeout(this.saveTimer)
+    this.saveTimer = null
+    this.saveAutoSave()
+    this.saveDirty = false
+  },
+  saveAutoSave() {
+    if (typeof storage === 'undefined' || !storage.set) return
+    storage.set({ key: 'autoSave', value: JSON.stringify(this.buildSaveData()), success: () => {}, fail: () => {} })
+  },
+  saveRecoveryData(index) {
+    const data = this.buildSaveData()
+    if (index === 'new') this.recoveryData = (this.recoveryData || []).concat([data])
+    else {
+      const slot = Number(index)
+      if (!Number.isInteger(slot) || slot < 0 || !this.recoveryData[slot]) return prompt.showToast({ message: '存档不存在' })
+      const updated = (this.recoveryData || []).slice()
+      updated[slot] = data
+      this.recoveryData = updated
+    }
+    this.saveData(index === 'new' ? '保存成功' : '覆盖成功')
+  },
+  deleteRecoveryData(index) {
+    const slot = Number(index)
+    if (!Number.isInteger(slot) || slot < 0 || !this.recoveryData[slot]) return prompt.showToast({ message: '存档不存在' })
+    const updated = this.recoveryData.slice()
+    updated.splice(slot, 1)
+    this.recoveryData = updated
+    this.saveData('删除成功')
+  },
+  restoreData(data) {
+    const scene = Number(data && data.currentScene)
+    const dialogue = Number(data && data.currentDialogue)
+    this.currentScene = Number.isInteger(scene) && scene >= 0 && scene < 315 ? scene : 0
+    this.currentDialogue = Number.isInteger(dialogue) && dialogue >= 0 ? dialogue : 0
+    this.choice = Array.isArray(data && data.choice) ? data.choice.slice() : []
+    const routeState = data && data.routeState ? JSON.parse(JSON.stringify(data.routeState)) : {}
+    this.routeState = { 'day-route-first': Array.isArray(routeState['day-route-first']) ? routeState['day-route-first'] : Array.isArray(routeState['day-route']) ? routeState['day-route'] : [], 'day-route-second': Array.isArray(routeState['day-route-second']) ? routeState['day-route-second'] : [] }
+    const saved = data && data.settings ? data.settings : {}
+    this.settings = Object.assign({}, this.settings, saved, { textSpeed: Number.isFinite(Number(saved.textSpeed)) ? Number(saved.textSpeed) : this.settings.textSpeed })
+    this.setTextSize(this.settings.textSize)
+    this.restoring = true
+  },
+  loadRecoveryData(index) {
+    const slot = Number(index)
+    const data = Number.isInteger(slot) && slot >= 0 ? this.recoveryData[slot] : null
+    if (!data) return prompt.showToast({ message: '存档不存在' })
+    this.loadSlot = slot
+    this.END = ''
+    this.showEnd = false
+    this.showChoice = false
+    this.dialogueVisible = false
+    this.restoreData(data)
+    this.recovery = 0
+    this.menu = false
+    this.loadScene(this.currentScene)
+  },
+  skipScene(step) { const dialogues = this.scene.dialogues || []; const last = dialogues[dialogues.length - 1]; if (this.scene.choices || !last || last.toScenes !== undefined || last.END || this.currentScene + step >= this.gameData.nodeCount) { this.menu = false; prompt.showToast({ message: '重要剧情或结尾，无法跳过' }); return }; this.menu = false; this.loadScene(this.currentScene + step) },
+  nextSafeChapter() { return this.scene.safeNextChapter >= 0 ? this.scene.safeNextChapter : -1 },
+  skipChapter() { const next = this.nextSafeChapter(); this.menu = false; if (next < 0) return prompt.showToast({ message: '没有可安全跳过的章节' }); this.loadScene(next) },
+  saveData(message) { storage.set({ key: 'recoveryData', value: JSON.stringify(this.recoveryData), success: () => prompt.showToast({ message }), fail: () => prompt.showToast({ message: '保存失败' }) }) },
+  scrollToTop() { this.$element('scroll').scrollTo({ top: 0, left: 0, behavior: 'instant' }) },
+  setTextSize(size) { this.textSize = Number(size) || 22; this.textSmall = this.textSize <= 22; this.textMedium = this.textSize > 22 && this.textSize <= 30; this.textLarge = this.textSize > 30 },
+  stageLayout(characters) {
+    const layout = { stageSingleImage: '', stageDuoLeftImage: '', stageDuoRightImage: '', stageTrioLeftImage: '', stageTrioCenterImage: '', stageTrioRightImage: '' }
+    const order = { left: 0, center: 1, right: 2 }
+    const stages = characters.slice(0, 3).sort((left, right) => order[left.slot] - order[right.slot])
+    if (stages.length === 1) layout.stageSingleImage = stages[0].image || ''
+    else if (stages.length === 2) { layout.stageDuoLeftImage = stages[0].image || ''; layout.stageDuoRightImage = stages[1].image || '' }
+    else if (stages.length === 3) { layout.stageTrioLeftImage = stages[0].image || ''; layout.stageTrioCenterImage = stages[1].image || ''; layout.stageTrioRightImage = stages[2].image || '' }
+    return layout
+  },
+  overlayLayout(scene) {
+    const overlay = scene.sceneOverlay
+    return {
+      stageOverlayImage: overlay && overlay.presentation === 'stage' ? overlay.image || '' : '',
+      sceneOverlayImage: overlay && overlay.presentation !== 'stage' ? overlay.image || '' : '',
+      centerOverlayImage: scene.centerOverlay ? scene.centerOverlay.image || '' : '',
+      topRightOverlayImage: scene.topRightOverlay ? scene.topRightOverlay.image || '' : ''
+    }
+  }
+}
+</script>
+
+<style>
+.page { width: 212px; height: 520px; overflow: hidden; }
+.game-page { background-color: #000000; }
+.background { position: absolute; top: 0px; left: 0px; width: 692px; height: 520px; object-fit: contain; }
+.background-scroll { position: absolute; top: 0px; left: 0px; width: 212px; height: 520px; overflow: hidden; flex-wrap: nowrap; flex-direction: row; }
+.background-horizontal { width: 692px; height: 520px; object-fit: cover; }
+.background-vertical-scroll { position: absolute; top: 0px; left: 0px; width: 212px; height: 520px; overflow: hidden; flex-wrap: nowrap; flex-direction: column; }
+.background-vertical-track { width: 692px; height: 528px; flex-direction: column; }
+.background-vertical { width: 692px; height: 520px; object-fit: contain; }
+.cg-scroll { position: absolute; top: 0px; left: 0px; width: 212px; height: 520px; overflow: hidden; flex-wrap: nowrap; flex-direction: row; }
+.cg-image { width: 692px; height: 520px; object-fit: contain; }
+.person-single { position: absolute; top: 20px; left: 0px; width: 212px; height: 520px; object-fit: contain; }
+.person-duo-left { position: absolute; bottom: -20px; left: -43px; width: 184px; height: 450px; object-fit: contain; }
+.person-duo-right { position: absolute; bottom: -20px; left: 71px; width: 184px; height: 450px; object-fit: contain; }
+.person-trio-left { position: absolute; bottom: -20px; left: -55px; width: 171px; height: 420px; object-fit: contain; }
+.person-trio-center { position: absolute; bottom: -20px; left: 20px; width: 171px; height: 420px; object-fit: contain; }
+.person-trio-right { position: absolute; bottom: -20px; left: 95px; width: 171px; height: 420px; object-fit: contain; }
+.scene-overlay { position: absolute; top: 0px; left: 0px; width: 212px; height: 335px; object-fit: contain; }
+.center-overlay { position: absolute; top: 45px; left: -14px; width: 240px; height: 380px; object-fit: contain; }
+.top-right-overlay { position: absolute; top: 76px; left: 70px; width: 100px; height: 60px; object-fit: contain; }
+.menu-trigger-hit { position: absolute; top: 0px; left: 74px; width: 64px; height: 64px; }
+.menu-trigger { position: absolute; top: 14px; left: 16px; width: 32px; height: 28px; background-color: #120d12; opacity: 0.72; color: #ffdbe7; font-size: 22px; font-weight: bold; text-align: center; border-radius: 14px; }
+.dialogue-panel { position: absolute; top: 326px; left: 0px; width: 212px; height: 194px; background-color: #120d13; opacity: 0.30; border-radius: 18px 18px 0px 0px; }
+.trial-label { position: absolute; top: 302px; left: 10px; width: 72px; height: 20px; color: #ffd8e6; font-size: 15px; font-weight: bold; text-align: center; background-color: #120d13; opacity: 0.78; border-radius: 8px; }
+.character-name { position: absolute; top: 330px; left: 10px; width: 192px; font-size: 22px; color: #ffd8e6; font-weight: bold; }
+.scroll { position: absolute; top: 360px; left: 5px; width: 202px; height: 152px; overflow: hidden; flex-wrap: wrap; }
+.dialogue-content { width: 100%; min-height: 174px; flex-direction: column; justify-content: flex-start; align-items: flex-start; }
+.dialogue-text { color: #ffffff; font-weight: bold; width: 100%; text-align: left; line-height: 30px; }
+.dialogue-text-small { font-size: 20px; }
+.dialogue-text-medium { font-size: 24px; line-height: 34px; }
+.dialogue-text-large { font-size: 28px; line-height: 38px; }
+.choice-page { position: absolute; background-color: #130d15; flex-direction: column; align-items: center; }
+.choice-list { position: absolute; top: 72px; left: 14px; width: 184px; height: 376px; overflow: hidden; }
+.choice-grid { width: 184px; min-height: 376px; flex-direction: column; flex-wrap: nowrap; justify-content: center; align-items: center; }
+.choice { width: 88px; height: 64px; margin: 0px 2px 8px; padding: 8px 6px; background-color: #34202d; color: #ffffff; font-size: 18px; font-weight: bold; line-height: 23px; text-align: center; border-radius: 10px; }
+.menu-page { position: absolute; top: 0px; left: 0px; background-color: #171119; flex-direction: column; align-items: center; justify-content: center; }
+.menu-heading { width: 188px; height: 56px; line-height: 56px; color: #ffd8e6; font-size: 24px; font-weight: bold; text-align: center; }
+.menu-status { width: 164px; height: 22px; margin-bottom: 10px; flex-direction: row; justify-content: space-between; align-items: center; }
+.chapter-label { color: #e4bdcb; font-size: 14px; font-weight: bold; }
+.scene-progress { color: #cbaeb9; font-size: 13px; font-weight: bold; }
+.menu-btn { width: 164px; height: 44px; margin-top: 8px; background-color: #412536; color: #ffffff; font-size: 19px; font-weight: bold; text-align: center; border-radius: 10px; }
+.menu-primary { background-color: #b95079; }
+.menu-row { width: 164px; height: 38px; margin-top: 8px; flex-direction: row; justify-content: space-between; }
+.menu-small-btn { width: 78px; height: 38px; background-color: #412536; color: #ffd8e6; font-size: 18px; font-weight: bold; text-align: center; border-radius: 10px; }
+.menu-close { width: 184px; height: 50px; line-height: 50px; margin-top: 12px; background-color: #302b33; color: #ffffff; font-size: 20px; font-weight: bold; text-align: center; border-radius: 10px; }
+.end-page { position: absolute; background-color: #130d15; flex-direction: column; align-items: center; justify-content: center; }
+.end-title { width: 180px; color: #ffd8e6; font-size: 26px; font-weight: bold; text-align: center; }
+.end-text { width: 180px; margin-top: 16px; color: #ffffff; font-size: 22px; font-weight: bold; text-align: center; }
+.end-action { width: 144px; height: 44px; margin-top: 28px; background-color: #b95079; color: #ffffff; font-size: 20px; font-weight: bold; text-align: center; border-radius: 12px; }
+
+@media (shape: rect) {
+  .page { width: 212px; height: 303px; }
+  .background, .cg-image { width: 405px; height: 303px; }
+  .background-scroll { width: 212px; height: 303px; }
+  .background-horizontal { width: 520px; height: 303px; object-fit: cover; }
+  .background-vertical-scroll { width: 212px; height: 303px; }
+  .background-vertical-track { width: 405px; height: 311px; }
+  .background-vertical { width: 405px; height: 303px; }
+  .cg-scroll { width: 212px; height: 303px; }
+  .person-single { top: -8px; left: -53px; width: 318px; height: 338px; }
+  .person-duo-left { bottom: -29px; left: -38px; width: 180px; height: 368px; }
+  .person-duo-right { bottom: -29px; left: 70px; width: 180px; height: 368px; }
+  .person-trio-left { bottom: -26px; left: -43px; width: 145px; height: 327px; }
+  .person-trio-center { bottom: -26px; left: 33px; width: 145px; height: 327px; }
+  .person-trio-right { bottom: -26px; left: 110px; width: 145px; height: 327px; }
+  .scene-overlay { width: 212px; height: 185px; }
+  .center-overlay { top: 12px; left: 0px; width: 212px; height: 190px; }
+  .top-right-overlay { top: 30px; left: 124px; width: 66px; height: 40px; }
+  .menu-trigger-hit { top: 0px; left: 0px; width: 54px; height: 54px; }
+  .menu-trigger { top: 10px; left: 10px; width: 28px; height: 24px; font-size: 17px; }
+  .dialogue-panel { top: 187px; width: 212px; height: 116px; border-radius: 14px 14px 0px 0px; }
+  .trial-label { top: 169px; left: 8px; width: 58px; height: 16px; font-size: 11px; border-radius: 6px; }
+  .character-name { top: 190px; left: 10px; width: 192px; font-size: 15px; }
+  .scroll { top: 214px; left: 8px; width: 196px; height: 82px; }
+  .dialogue-content { min-height: 90px; }
+  .dialogue-text { line-height: 20px; }
+  .dialogue-text-small { font-size: 14px; }
+  .dialogue-text-medium { font-size: 16px; line-height: 22px; }
+  .dialogue-text-large { font-size: 18px; line-height: 24px; }
+  .choice-list { top: 34px; left: 16px; width: 180px; height: 224px; }
+  .choice-grid { width: 180px; min-height: 224px; }
+  .choice { width: 112px; height: 38px; margin: 0px 2px 4px; padding: 4px 6px; font-size: 14px; line-height: 17px; border-radius: 8px; }
+  .menu-heading { width: 180px; height: 32px; line-height: 32px; font-size: 17px; }
+  .menu-status { width: 164px; height: 16px; margin-bottom: 4px; }
+  .chapter-label, .scene-progress { font-size: 11px; }
+  .menu-btn { width: 164px; height: 30px; margin-top: 4px; font-size: 14px; border-radius: 8px; }
+  .menu-row { width: 164px; height: 28px; margin-top: 4px; }
+  .menu-small-btn { width: 78px; height: 28px; font-size: 13px; border-radius: 8px; }
+  .menu-close { width: 164px; height: 32px; line-height: 32px; margin-top: 6px; font-size: 14px; border-radius: 8px; }
+  .end-title { width: 180px; font-size: 18px; }
+  .end-text { width: 180px; margin-top: 10px; font-size: 16px; }
+  .end-action { width: 128px; height: 34px; margin-top: 18px; font-size: 15px; border-radius: 8px; }
+}
+</style>
