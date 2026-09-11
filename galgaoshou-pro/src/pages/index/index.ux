@@ -1,0 +1,100 @@
+<template>
+  <div class="page" @swipe="ban">
+    <image id="home-bg" static class="home-background" src="/common/home-pro.png"></image>
+    <image static class="home-logo" src="/common/logo.png"></image>
+
+    <div class="home-panel">
+      <text class="resume-copy">{{resumeCopy}}</text>
+      <text class="primary-action" @click="continueGame">{{primaryAction}}</text>
+      <div class="secondary-row">
+        <text class="secondary-action" @click="startGame">新游戏</text>
+        <text class="secondary-action" @click="openSaves">存档</text>
+      </div>
+      <div class="action-row">
+        <text class="compact-action" @click="openSettings">设置</text>
+        <text class="compact-action" @click="openAbout">关于</text>
+      </div>
+      <text class="exit-action" @click="exit">退出</text>
+    </div>
+  </div>
+</template>
+
+<script>
+import router from '@system.router'
+import storage from '@system.storage'
+
+export default {
+  private: { autoSaveData: null, resumeCopy: '从序章开始新的故事', primaryAction: '开始阅读' },
+  onInit() { this.refreshAutoSave() },
+  onShow() { this.refreshAutoSave() },
+  refreshAutoSave() {
+    this.autoSaveData = null
+    storage.get({
+      key: 'autoSave',
+      success: (data) => {
+        try {
+          const saved = JSON.parse(data)
+          if (Number.isInteger(Number(saved && saved.currentScene)) && Number(saved.currentScene) >= 0) this.autoSaveData = saved
+        } catch (error) {}
+        this.refreshResumeState()
+      },
+      fail: () => this.refreshResumeState()
+    })
+  },
+  refreshResumeState() {
+    if (this.autoSaveData) {
+      this.resumeCopy = `最近进度 · 第${Number(this.autoSaveData.chapter || 0) + 1}章 · 场景${Number(this.autoSaveData.currentScene) + 1}`
+      this.primaryAction = '继续阅读'
+      return
+    }
+    this.resumeCopy = '从序章开始新的故事'
+    this.primaryAction = '开始阅读'
+  },
+  continueGame() {
+    if (this.autoSaveData) return router.push({ uri: 'pages/detail', params: { auto: '1' } })
+    this.startGame()
+  },
+  startGame() { router.push({ uri: 'pages/detail' }) },
+  openSaves() { router.push({ uri: 'pages/saves', params: { mode: 'load' } }) },
+  openSettings() { router.push({ uri: 'pages/settings' }) },
+  openAbout() { router.push({ uri: 'pages/about' }) },
+  exit() { this.$app.exit() },
+  ban() {}
+}
+</script>
+
+<style>
+.page { width: 212px; height: 520px; overflow: hidden; background-color: #160f16; }
+.home-background { position: absolute; top: 0px; left: 0px; width: 212px; height: 520px; object-fit: cover; }
+.home-logo { position: absolute; top: 96px; left: 16px; width: 180px; height: 102px; object-fit: contain; }
+.home-panel { position: absolute; top: 284px; left: 0px; width: 212px; height: 236px; background-color: #f5e1e8; border-radius: 14px 14px 0px 0px; flex-direction: column; align-items: center; }
+.resume-copy { width: 212px; height: 20px; margin-top: 8px; color: #754056; font-size: 14px; font-weight: bold; text-align: center; text-overflow: ellipsis; lines: 1; }
+.primary-action { width: 176px; height: 50px; margin-top: 8px; background-color: #b95079; color: #ffffff; font-size: 22px; font-weight: bold; text-align: center; border-radius: 10px; }
+.secondary-row { width: 176px; height: 38px; margin-top: 6px; flex-direction: row; justify-content: space-between; }
+.secondary-action { width: 84px; height: 38px; background-color: #ead1da; color: #722c4b; font-size: 17px; font-weight: bold; text-align: center; border-radius: 10px; }
+.action-row { width: 176px; height: 38px; margin-top: 6px; flex-direction: row; justify-content: space-between; }
+.compact-action { width: 84px; height: 38px; background-color: #ead1da; color: #722c4b; font-size: 17px; font-weight: bold; text-align: center; border-radius: 10px; }
+.exit-action { width: 176px; height: 40px; margin-top: 8px; background-color: #d9bac8; color: #722c4b; font-size: 19px; font-weight: bold; text-align: center; border-radius: 10px; }
+
+@media (shape: rect) {
+  .page { width: 212px; height: 303px; }
+  .home-background { width: 212px; height: 303px; }
+  .home-logo { top: 18px; left: 36px; width: 140px; height: 80px; }
+  .home-panel { top: 118px; width: 212px; height: 185px; border-radius: 12px 12px 0px 0px; }
+  .resume-copy { width: 188px; height: 16px; margin-top: 6px; }
+  .primary-action { width: 164px; height: 38px; margin-top: 6px; font-size: 16px; }
+  .secondary-row, .action-row { width: 164px; height: 30px; margin-top: 5px; }
+  .secondary-action, .compact-action { width: 78px; height: 30px; font-size: 13px; border-radius: 8px; }
+  .exit-action { width: 164px; height: 30px; margin-top: 6px; font-size: 14px; border-radius: 8px; }
+}
+@media (shape: circle) {
+  .page, .home-background { width: 233px; height: 233px; }
+  .home-logo { top: 20px; left: 42px; width: 149px; height: 72px; }
+  .home-panel { top: 105px; width: 233px; height: 128px; border-radius: 0px; }
+  .resume-copy { width: 180px; height: 16px; margin-top: 4px; font-size: 12px; }
+  .primary-action { width: 158px; height: 28px; margin-top: 4px; font-size: 14px; border-radius: 8px; }
+  .secondary-row, .action-row { width: 158px; height: 24px; margin-top: 4px; }
+  .secondary-action, .compact-action { width: 75px; height: 24px; font-size: 11px; border-radius: 7px; }
+  .exit-action { width: 158px; height: 24px; margin-top: 4px; font-size: 12px; border-radius: 7px; }
+}
+</style>

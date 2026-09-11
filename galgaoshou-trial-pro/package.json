@@ -1,0 +1,21 @@
+{
+  "name": "gal-master-band10",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "test": "node --test tests/trial.test.js",
+    "check": "npm test",
+    "build": "aiot release",
+    "build:debug": "aiot build",
+    "release": "aiot release",
+    "start": "aiot start"
+  },
+  "devDependencies": {
+    "@aiot-toolkit/jsc": "^1.0.3",
+    "aiot-toolkit": "2.0.5",
+    "dxt-js": "^0.0.3"
+  },
+  "browserslist": [
+    "chrome 65"
+  ]
+}
